@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.userRouter = void 0;
+const express_1 = require("express");
+const user_controller_1 = require("./user.controller");
+const zod_validation_util_1 = require("../../../utils/zod.validation.util");
+const user_validation_1 = require("./user.validation");
+const user_interface_1 = require("./user.interface");
+const checkAuthAndAuthorization_1 = require("../../../middlewares/checkAuthAndAuthorization");
+exports.userRouter = (0, express_1.Router)();
+exports.userRouter.post("/regester", (0, zod_validation_util_1.userZodValidation)(user_validation_1.userValidationSchema), user_controller_1.controller.createUser);
+exports.userRouter.post("/add-money", (0, checkAuthAndAuthorization_1.checkAuthandAuthorization)(user_interface_1.ROLE.USER), user_controller_1.controller.addMoney);
+exports.userRouter.post("/withdraw", (0, checkAuthAndAuthorization_1.checkAuthandAuthorization)(user_interface_1.ROLE.USER), user_controller_1.controller.withrowMoney);
+exports.userRouter.post("/send-money", (0, checkAuthAndAuthorization_1.checkAuthandAuthorization)(user_interface_1.ROLE.USER), user_controller_1.controller.SendMoney);
+exports.userRouter.get("/transaction-history", (0, checkAuthAndAuthorization_1.checkAuthandAuthorization)(user_interface_1.ROLE.USER), user_controller_1.controller.getTransactions);
+exports.userRouter.get("/wallet", (0, checkAuthAndAuthorization_1.checkAuthandAuthorization)(user_interface_1.ROLE.USER), user_controller_1.controller.getPersonalWallet);
+exports.userRouter.get("/newusertoken", user_controller_1.controller.getUserNewAccessToken);

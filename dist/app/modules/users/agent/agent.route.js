@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.agentRouter = void 0;
+const express_1 = require("express");
+const agent_controller_1 = require("./agent.controller");
+const checkAuthAndAuthorization_1 = require("../../../middlewares/checkAuthAndAuthorization");
+const agent_validation_1 = require("./agent.validation");
+const zod_validation_util_1 = require("../../../utils/zod.validation.util");
+const user_interface_1 = require("../user/user.interface");
+exports.agentRouter = (0, express_1.Router)();
+exports.agentRouter.post("/regester", (0, zod_validation_util_1.userZodValidation)(agent_validation_1.agentValidationSchema), agent_controller_1.agent_controller.createUser);
+exports.agentRouter.post("/cash-in", (0, checkAuthAndAuthorization_1.checkAuthandAuthorization)(user_interface_1.ROLE.AGENT), agent_controller_1.agent_controller.cashIn);
+exports.agentRouter.post("/cash-out", (0, checkAuthAndAuthorization_1.checkAuthandAuthorization)(user_interface_1.ROLE.AGENT), agent_controller_1.agent_controller.cashOut);
+exports.agentRouter.get("/wallet", (0, checkAuthAndAuthorization_1.checkAuthandAuthorization)(user_interface_1.ROLE.AGENT), agent_controller_1.agent_controller.getPersonalWallet);
+exports.agentRouter.get("/transaction-history", (0, checkAuthAndAuthorization_1.checkAuthandAuthorization)(user_interface_1.ROLE.AGENT), agent_controller_1.agent_controller.getPersonalTransaction);
+exports.agentRouter.get("/newagenttoken", agent_controller_1.agent_controller.getAgentNewAccessToken);

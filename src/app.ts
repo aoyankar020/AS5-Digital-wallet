@@ -1,0 +1,19 @@
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { GlobalError } from "./app/middlewares/error.global";
+import { page_not_Found } from "./app/middlewares/error.notFound";
+import { routerController } from "./app/routes/index.routes";
+export const app = express();
+
+app.use(cors());
+app.use(express.json());
+app.use(cookieParser());
+app.use("/api/wallet/v1", routerController);
+
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
+
+app.use(GlobalError);
+app.use(page_not_Found);
