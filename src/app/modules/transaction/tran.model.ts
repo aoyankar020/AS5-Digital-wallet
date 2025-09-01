@@ -7,7 +7,7 @@ import {
 
 const transactionSchema = new Schema<ITransaction>(
   {
-    amount: { type: Number, required: true },
+    ammount: { type: Number, required: true },
     type: {
       type: String,
       enum: Object.values(TRANSACTION_TYPE),

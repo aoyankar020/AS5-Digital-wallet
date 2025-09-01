@@ -18,7 +18,7 @@ export enum TRANSACTION_STATUS {
 }
 
 export interface ITransaction {
-  amount: number;
+  ammount: number;
   type: TRANSACTION_TYPE;
   status: TRANSACTION_STATUS;
   senderWallet: Types.ObjectId;

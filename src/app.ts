@@ -6,9 +6,14 @@ import { page_not_Found } from "./app/middlewares/error.notFound";
 import { routerController } from "./app/routes/index.routes";
 export const app = express();
 
-app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
+app.use(
+  cors({
+    origin: "http://localhost:3000", // your frontend origin
+    credentials: true, // allow cookies/authorization headers
+  })
+);
 app.use("/api/wallet/v1", routerController);
 
 app.get("/", (req, res) => {

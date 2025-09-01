@@ -18,6 +18,8 @@ import { Types } from "mongoose";
 import { generateToken, verifyToken } from "../../../utils/jwt.util";
 import { ENV } from "../../../config/env.config";
 import { JwtPayload } from "jsonwebtoken";
+import { QueryBuilder } from "../../../utils/QueryBuilder";
+import { transacrionsSearchFields } from "../user/search.constant";
 // Create User and Wallet
 const createAGENT_service = async (payload: Partial<IAGENT>) => {
   const session = await Agent.startSession();
@@ -158,7 +160,7 @@ const cashIn_service = async (
     const transaction = await Transaction.create(
       [
         {
-          amount: ammount,
+          ammount: ammount,
           initiatedBy: agent._id,
           receiverWallet: receverWalletInfo._id, // user
           senderWallet: agentwalletInfo._id, //  agent
@@ -171,7 +173,7 @@ const cashIn_service = async (
     // Populate the `initiatedBy` field (adjust fields as necessary)
     const populatedTransaction = await Transaction.findById(transaction[0]._id)
 
-      .select("amount type status initiatedBy")
+      .select("ammount type status initiatedBy")
       .populate("initiatedBy", "name -_id")
       .session(session);
 
@@ -271,7 +273,7 @@ const cashOut_service = async (
     if (senderWalletInfo.balance < ammount) {
       throw new AppError(
         StatusCodes.BAD_REQUEST,
-        "Sender Have not Sufficient Money to Cash out"
+        "Not  Sufficient Money to Cash out"
       );
     }
     agentwalletInfo.balance = agentwalletInfo.balance + ammount; // ✅ Add the amount correctly
@@ -279,7 +281,7 @@ const cashOut_service = async (
     const transaction = await Transaction.create(
       [
         {
-          amount: ammount,
+          ammount: ammount,
           initiatedBy: agent._id,
           receiverWallet: agentwalletInfo._id, // user
           senderWallet: senderWalletInfo._id, //  agent
@@ -292,7 +294,7 @@ const cashOut_service = async (
     // Populate the `initiatedBy` field (adjust fields as necessary)
     const populatedTransaction = await Transaction.findById(transaction[0]._id)
       .session(session)
-      .select("amount type status initiatedBy")
+      .select("ammount type status initiatedBy")
       .populate("initiatedBy", "name -_id");
 
     await agentwalletInfo.save({ session }); // ✅ Save to persist change
@@ -351,7 +353,10 @@ const getPersonalWallet = async (walletID: Types.ObjectId) => {
   };
 };
 // Get Agent Personal Transaction
-const getTranasaction_service = async (email: string) => {
+const getTranasaction_service = async (
+  email: string,
+  query: Record<string, string>
+) => {
   const user = await Agent.findOne({ email });
   if (!user) {
     return {
@@ -361,13 +366,38 @@ const getTranasaction_service = async (email: string) => {
       data: null,
     };
   }
-  const transactions = await Transaction.find({ initiatedBy: user._id });
 
+  const filter: any = { initiatedBy: user._id };
+
+  if (query.type) {
+    filter.type = query.type;
+  }
+  const baseQuery = Transaction.find(filter)
+    .populate("senderWallet")
+    .populate("receiverWallet")
+    .populate("initiatedBy", "name email");
+  // const transactions = await Transaction.find({ initiatedBy: user._id });
+  const modelQuery = new QueryBuilder(baseQuery, query);
+  // count for pagination
+
+  const agentAllTransactions = await modelQuery
+    .filter()
+    .sort()
+    .paginate()
+    .build();
+  const total = await Transaction.countDocuments({
+    initiatedBy: user._id,
+  });
   return {
     statusCode: StatusCodes.OK,
     status: true,
     message: `Your Transaction History`,
-    data: transactions,
+    data: agentAllTransactions,
+    meta: {
+      total,
+      page: Number(query.page) || 1,
+      limit: Number(query.limit) || 10,
+    },
   };
 };
 
@@ -401,6 +431,45 @@ const getNewAgentAccessToken = async (token: string) => {
     throw error;
   }
 };
+// Get Profile
+const getMe = async (userID: string) => {
+  const user = await Agent.findById(userID);
+
+  if (!user) {
+    return {
+      statusCode: StatusCodes.BAD_REQUEST,
+      status: false,
+      message: `No User Found`,
+      data: null,
+    };
+  }
+  return {
+    statusCode: StatusCodes.OK,
+    status: true,
+    message: `User Fetched Successfully`,
+    data: user,
+  };
+};
+const updateProfile = async (userID: string, payload: Partial<IAGENT>) => {
+  const isUpdate = await Agent.findByIdAndUpdate(userID, payload, {
+    new: true,
+  });
+
+  if (!isUpdate) {
+    return {
+      statusCode: StatusCodes.BAD_REQUEST,
+      status: false,
+      message: `User Not Updated`,
+      data: null,
+    };
+  }
+  return {
+    statusCode: StatusCodes.OK,
+    status: true,
+    message: `Profile Updated Successfully`,
+    data: isUpdate,
+  };
+};
 
 export const agent_services = {
   getPersonalWallet,
@@ -410,4 +479,6 @@ export const agent_services = {
   getUser_service,
   getTranasaction_service,
   getNewAgentAccessToken,
+  getMe,
+  updateProfile,
 };

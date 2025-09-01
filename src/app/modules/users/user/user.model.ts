@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { AUTH, EISACTIVE, IUSER, ROLE } from "./user.interface";
+import { AUTH, EISACTIVE, IUSER, Role } from "./user.interface";
 import bcrypt from "bcryptjs";
 import { ENV } from "../../../config/env.config";
 
@@ -20,9 +20,15 @@ const userSchema = new Schema<IUSER>(
     address: { type: String },
     image: { type: String },
     wallet: { type: Schema.Types.ObjectId, ref: "Wallet" },
-    isActive: { type: Object.values(EISACTIVE), default: EISACTIVE.ACTIVE },
+    isActive: {
+      type: String,
+      enum: Object.values(EISACTIVE),
+      default: EISACTIVE.ACTIVE,
+    },
+    // isActive: { type: Object.values(EISACTIVE), default: EISACTIVE.ACTIVE },
     isVarified: { type: Boolean, default: false },
-    role: { type: String, enum: Object.values(ROLE), default: ROLE.USER },
+    isApproved: { type: Boolean, default: false },
+    role: { type: String, enum: Object.values(Role), default: Role.USER },
     auth: [authSchema],
   },
   {

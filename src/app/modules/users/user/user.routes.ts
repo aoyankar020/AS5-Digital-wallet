@@ -3,9 +3,9 @@ import { controller } from "./user.controller";
 import { userZodValidation } from "../../../utils/zod.validation.util";
 import { userValidationSchema } from "./user.validation";
 
-import { ROLE } from "./user.interface";
-
 import { checkAuthandAuthorization } from "../../../middlewares/checkAuthAndAuthorization";
+
+import { Role } from "./user.interface";
 
 export const userRouter = Router();
 
@@ -17,31 +17,41 @@ userRouter.post(
 
 userRouter.post(
   "/add-money",
-  checkAuthandAuthorization(ROLE.USER),
+  checkAuthandAuthorization(Role.USER),
   controller.addMoney
 );
 userRouter.post(
   "/withdraw",
-  checkAuthandAuthorization(ROLE.USER),
+  checkAuthandAuthorization(Role.USER),
   controller.withrowMoney
 );
 userRouter.post(
   "/send-money",
-  checkAuthandAuthorization(ROLE.USER),
+  checkAuthandAuthorization(Role.USER),
   controller.SendMoney
 );
 userRouter.get(
   "/transaction-history",
-  checkAuthandAuthorization(ROLE.USER),
+  checkAuthandAuthorization(Role.USER),
   controller.getTransactions
 );
 userRouter.get(
   "/wallet",
-  checkAuthandAuthorization(ROLE.USER),
+  checkAuthandAuthorization(Role.USER),
   controller.getPersonalWallet
 );
 userRouter.get(
   "/newusertoken",
 
   controller.getUserNewAccessToken
+);
+userRouter.get(
+  "/me",
+  checkAuthandAuthorization(Role.USER, Role.ADMIN),
+  controller.getMe
+);
+userRouter.patch(
+  "/update_user",
+  checkAuthandAuthorization(Role.USER, Role.ADMIN),
+  controller.saveUserProfile
 );

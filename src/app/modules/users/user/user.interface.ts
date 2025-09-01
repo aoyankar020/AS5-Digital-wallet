@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 
-export enum ROLE {
+export enum Role {
+  SUPER_ADMIN = "SUPER_ADMIN",
   ADMIN = "ADMIN",
   USER = "USER",
   AGENT = "AGENT",
@@ -25,6 +26,7 @@ export interface IUSER {
   wallet?: Types.ObjectId;
   isActive?: EISACTIVE;
   isVarified?: boolean;
+  isApproved?: boolean;
   auth?: AUTH[];
-  role?: ROLE;
+  role?: Role;
 }

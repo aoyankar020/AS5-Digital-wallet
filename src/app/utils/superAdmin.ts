@@ -1,5 +1,6 @@
 import { ENV } from "../config/env.config";
-import { AUTH, EISACTIVE, ROLE } from "../modules/users/user/user.interface";
+
+import { AUTH, EISACTIVE, Role } from "../modules/users/user/user.interface";
 import { User } from "../modules/users/user/user.model";
 
 export const seedAdmin = async () => {
@@ -24,11 +25,10 @@ export const seedAdmin = async () => {
   const newSuperAdmin = await User.create({
     email: ENV.ADMIN_EMAIL,
     password: ENV.ADMIN_PASSWORD,
-    role: ROLE.ADMIN,
-    name: "Super Admin",
+    role: Role.ADMIN,
+    name: "Admin",
     isActive: EISACTIVE.ACTIVE,
     phone: ENV.ADMIN_PHONE,
-
     isVerified: true,
     auths: [providers],
   });

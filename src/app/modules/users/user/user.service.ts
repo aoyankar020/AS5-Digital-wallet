@@ -16,13 +16,18 @@ import { Agent } from "../agent/agent.model";
 import { ApproveAgentOptions } from "../agent/agent.interface";
 import { blockWalletOptions, WSTATUS } from "../../wallet/wallet.interface";
 
-import { searchParams } from "./search.constant";
+import {
+  excludeField,
+  searchParams,
+  transacrionsSearchFields,
+} from "./search.constant";
 import { excludeItems } from "../../../global.constant";
-import { Types } from "mongoose";
+import { Query, Types } from "mongoose";
 import { generateToken, verifyToken } from "../../../utils/jwt.util";
 import { ENV } from "../../../config/env.config";
-import { email } from "zod";
+
 import { JwtPayload } from "jsonwebtoken";
+import { QueryBuilder } from "../../../utils/QueryBuilder";
 
 // Create User and Wallet
 const createUser_service = async (payload: Partial<IUSER>) => {
@@ -127,7 +132,7 @@ const addMoney_service = async (payload: Partial<IUSER>, ammount: number) => {
     const transaction = await Transaction.create(
       [
         {
-          amount: ammount,
+          ammount: ammount,
           initiatedBy: user._id,
           receiverWallet: walletInfo._id,
           senderWallet: walletInfo._id,
@@ -140,7 +145,7 @@ const addMoney_service = async (payload: Partial<IUSER>, ammount: number) => {
     // Populate the `initiatedBy` field (adjust fields as necessary)
     const populatedTransaction = await Transaction.findById(transaction[0]._id)
       .session(session)
-      .select("amount type status initiatedBy")
+      .select("ammount type status initiatedBy")
       .populate("initiatedBy", "name -_id");
 
     await walletInfo.save({ session });
@@ -242,7 +247,7 @@ const withrow_service = async (
     const transaction = await Transaction.create(
       [
         {
-          amount: withdraw_ammount,
+          ammount: withdraw_ammount,
           initiatedBy: user._id,
           receiverWallet: walletInfo._id,
           senderWallet: walletInfo._id,
@@ -255,7 +260,7 @@ const withrow_service = async (
     // Populate the `initiatedBy` field (adjust fields as necessary)
     const populatedTransaction = await Transaction.findById(transaction[0]._id)
       .session(session)
-      .select("amount type status initiatedBy")
+      .select("ammount type status initiatedBy")
       .populate("initiatedBy", "name -_id");
 
     await walletInfo.save({ session }); // ✅ Save to persist change
@@ -317,10 +322,7 @@ const sendMoney_service = async (
       );
     }
     if (receiver_phone === senderPhone) {
-      throw new AppError(
-        StatusCodes.BAD_REQUEST,
-        "Sender Phone Number Can't be same as Receiver Phone Number"
-      );
+      throw new AppError(StatusCodes.BAD_REQUEST, "Both number can't be same");
     }
 
     const receiverWallet = await isValidUser(receiver_phone, session); // userwallet
@@ -351,7 +353,7 @@ const sendMoney_service = async (
     const transaction = await Transaction.create(
       [
         {
-          amount: transfer_ammount,
+          ammount: transfer_ammount,
           initiatedBy: user._id,
           receiverWallet: receiverWallet._id,
           senderWallet: senderWallet._id,
@@ -364,7 +366,7 @@ const sendMoney_service = async (
     // Populate the `initiatedBy` field (adjust fields as necessary)
     const populatedTransaction = await Transaction.findById(transaction[0]._id)
       .session(session)
-      .select("amount type status initiatedBy")
+      .select("ammount type status initiatedBy")
       .populate("initiatedBy", "name -_id");
     await session.commitTransaction();
     session.endSession();
@@ -383,23 +385,48 @@ const sendMoney_service = async (
   }
 };
 // Get Single user Transactions
-const getTranasaction_service = async (email: string) => {
+const getTranasaction_service = async (
+  email: string,
+  query: Record<string, string>
+) => {
   const user = await User.findOne({ email });
   if (!user) {
     return {
       statusCode: StatusCodes.BAD_REQUEST,
       status: false,
-      message: `No Users Found`,
+      message: `No User Found`,
       data: null,
     };
   }
-  const transactions = await Transaction.find({ initiatedBy: user._id });
+  const filter: any = { initiatedBy: user._id };
+  if (query.type) {
+    filter.type = query.type;
+  }
+  const baseQuery = Transaction.find(filter)
+    .populate("senderWallet")
+    .populate("receiverWallet")
+    .populate("initiatedBy", "name email");
+  const modelQuery = new QueryBuilder(baseQuery, query);
+  const userAllTransactions = await modelQuery
+    .filter()
+    .sort()
+    .paginate()
+    .build();
+  const total = await Transaction.countDocuments({
+    initiatedBy: user._id,
+  });
+  // const transactions = await Transaction.find({ initiatedBy: user._id });
 
   return {
     statusCode: StatusCodes.OK,
     status: true,
     message: `ALL Transaction History`,
-    data: transactions,
+    data: userAllTransactions,
+    meta: {
+      total,
+      page: Number(query.page) || 1,
+      limit: Number(query.limit) || 10,
+    },
   };
 };
 // Gell User Personal Wallet
@@ -463,6 +490,25 @@ const getUser_service = async (query: Record<string, string>) => {
     data: users,
   };
 };
+// Get Profile
+const getMe = async (userID: string) => {
+  const user = await User.findById(userID);
+
+  if (!user) {
+    return {
+      statusCode: StatusCodes.BAD_REQUEST,
+      status: false,
+      message: `No User Found`,
+      data: null,
+    };
+  }
+  return {
+    statusCode: StatusCodes.OK,
+    status: true,
+    message: `User Fetched Successfully`,
+    data: user,
+  };
+};
 
 //  Get All Users Wallet
 const getWallets_service = async () => {
@@ -482,15 +528,37 @@ const getWallets_service = async () => {
     data: wallets,
   };
 };
+
 // Get All Users Transaction
-const getALLUsersTranasaction_service = async () => {
-  const transactions = await Transaction.find({});
+const getALLUsersTranasaction_service = async (
+  query: Record<string, string>
+) => {
+  const filter: any = {};
+  if (query.type) {
+    filter.type = query.type;
+  }
+  const baseQuery = Transaction.find(filter)
+    .populate("senderWallet")
+    .populate("receiverWallet")
+    .populate("initiatedBy", "name email");
+  const modelQuery = new QueryBuilder(baseQuery, query);
+  const allUsersTransactions = await modelQuery
+    .filter()
+    .sort()
+    .paginate()
+    .build();
+  const total = await Transaction.countDocuments();
 
   return {
     statusCode: StatusCodes.OK,
     status: true,
     message: `ALL Users Transaction History`,
-    data: transactions,
+    data: allUsersTransactions,
+    meta: {
+      total,
+      page: Number(query.page) || 1,
+      limit: Number(query.limit) || 10,
+    },
   };
 };
 
@@ -505,19 +573,22 @@ const approve_Agent = async ({
   if (!agent) {
     throw new Error("Agent not found");
   }
+  // Always update active status
+  agent.isActive = activeStatus;
+
   if (activeStatus !== EISACTIVE.BLOCKED) {
-    if (!agent?.isApproved && approveStatus !== undefined) {
+    // Update approval if provided
+    if (approveStatus !== undefined) {
       agent.isApproved = approveStatus;
-      await agent.save();
     }
-    if (!agent?.isVarified && varifiedStatus !== undefined) {
+    // Update verification if provided
+    if (varifiedStatus !== undefined) {
       agent.isVarified = varifiedStatus;
-      await agent.save();
     }
   } else {
+    // Blocked state overrides everything
     agent.isApproved = false;
     agent.isVarified = false;
-    agent.isActive = activeStatus;
   }
   await agent.save();
   return {
@@ -549,6 +620,27 @@ const block_Wallet = async ({ wallet, status }: blockWalletOptions) => {
   };
 };
 
+const updateProfile = async (userID: string, payload: Partial<IUSER>) => {
+  const isUpdate = await User.findByIdAndUpdate(userID, payload, {
+    new: true,
+  });
+
+  if (!isUpdate) {
+    return {
+      statusCode: StatusCodes.BAD_REQUEST,
+      status: false,
+      message: `User Not Updated`,
+      data: null,
+    };
+  }
+  return {
+    statusCode: StatusCodes.OK,
+    status: true,
+    message: `Profile Updated Successfully`,
+    data: isUpdate,
+  };
+};
+
 export const services = {
   createUser_service,
   addMoney_service,
@@ -562,4 +654,6 @@ export const services = {
   block_Wallet,
   getPersonalWallet,
   getNewAccessToken,
+  getMe,
+  updateProfile,
 };

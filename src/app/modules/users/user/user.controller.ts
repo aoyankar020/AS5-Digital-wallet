@@ -3,6 +3,7 @@ import { asyncHandller } from "../../../middlewares/async.handler";
 import { services } from "./user.service";
 import { sendResponse } from "../../../middlewares/sendResponse";
 import { StatusCodes } from "http-status-codes";
+import { JwtPayload } from "jsonwebtoken";
 
 // Create New User
 const createUser = asyncHandller(
@@ -31,6 +32,7 @@ const addMoney = asyncHandller(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (req: Request, res: Response, next: NextFunction) => {
     const data = req.user;
+    console.log("User:", data);
     if (!data) {
       sendResponse(res, {
         statusCode: StatusCodes.NON_AUTHORITATIVE_INFORMATION,
@@ -40,6 +42,7 @@ const addMoney = asyncHandller(
       });
     }
     const { ammount } = req.body;
+    console.log("Ammount", ammount);
     const payload = {
       phone: data.phone,
     };
@@ -100,13 +103,18 @@ const getTransactions = asyncHandller(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
+    const query = req.query || {};
 
-    const isCreated = await services.getTranasaction_service(user.email);
+    const isCreated = await services.getTranasaction_service(
+      user.email,
+      query as Record<string, string>
+    );
     sendResponse(res, {
       statusCode: isCreated.statusCode,
       status: isCreated.status,
       message: isCreated.message,
       data: isCreated.data,
+      meta: isCreated.meta,
     });
   }
 );
@@ -143,12 +151,16 @@ const getUserNewAccessToken = asyncHandller(
 const getAllUsersTransactions = asyncHandller(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (req: Request, res: Response, next: NextFunction) => {
-    const isCreated = await services.getALLUsersTranasaction_service();
+    const query = req.query || {};
+    const isCreated = await services.getALLUsersTranasaction_service(
+      query as Record<string, string>
+    );
     sendResponse(res, {
       statusCode: isCreated.statusCode,
       status: isCreated.status,
       message: isCreated.message,
       data: isCreated.data,
+      meta: isCreated.meta,
     });
   }
 );
@@ -160,6 +172,20 @@ const getUsers = asyncHandller(
     const isCreated = await services.getUser_service(
       query as Record<string, string>
     );
+    sendResponse(res, {
+      statusCode: isCreated.statusCode,
+      status: isCreated.status,
+      message: isCreated.message,
+      data: isCreated.data,
+    });
+  }
+);
+const getMe = asyncHandller(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = req.user as JwtPayload;
+    console.log("decoded token", decodedToken._id);
+    const isCreated = await services.getMe(decodedToken._id);
     sendResponse(res, {
       statusCode: isCreated.statusCode,
       status: isCreated.status,
@@ -202,6 +228,23 @@ const blockWallet = asyncHandller(async (req: Request, res: Response) => {
     data: isCreated.data,
   });
 });
+const saveUserProfile = asyncHandller(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async (req: Request, res: Response) => {
+    const decodedToken = req.user as JwtPayload;
+    console.log("Save Data Called");
+    // Get update payload from request body
+    const payload = req.body;
+
+    const isCreated = await services.updateProfile(decodedToken._id, payload);
+    sendResponse(res, {
+      statusCode: isCreated.statusCode,
+      status: isCreated.status,
+      message: isCreated.message,
+      data: isCreated.data,
+    });
+  }
+);
 export const controller = {
   createUser,
   getUsers,
@@ -215,4 +258,6 @@ export const controller = {
   blockWallet,
   getPersonalWallet,
   getUserNewAccessToken,
+  getMe,
+  saveUserProfile,
 };

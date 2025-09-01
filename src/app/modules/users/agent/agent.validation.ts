@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { EISACTIVE, ROLE } from "../user/user.interface";
+import { EISACTIVE, Role } from "../user/user.interface";
 
 // Import or define EISACTIVE enum
 
@@ -33,5 +33,5 @@ export const agentUpdateSchema = z.object({
     .boolean({ error: "isVerified must be true or false" })
     .optional(),
 
-  role: z.enum(Object.values(ROLE) as [string]).optional(),
+  role: z.enum(Object.values(Role) as [string]).optional(),
 });

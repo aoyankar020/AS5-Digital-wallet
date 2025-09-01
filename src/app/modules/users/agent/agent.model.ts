@@ -2,7 +2,7 @@ import { model, Schema } from "mongoose";
 
 import bcrypt from "bcryptjs";
 import { ENV } from "../../../config/env.config";
-import { AUTH, EISACTIVE, ROLE } from "../user/user.interface";
+import { AUTH, EISACTIVE, Role } from "../user/user.interface";
 import { IAGENT } from "./agent.interface";
 
 const authSchema = new Schema<AUTH>(
@@ -29,7 +29,7 @@ const agentSchema = new Schema<IAGENT>(
     },
     isVarified: { type: Boolean, default: false },
     isApproved: { type: Boolean, default: false },
-    role: { type: String, enum: Object.values(ROLE), default: ROLE.AGENT },
+    role: { type: String, enum: Object.values(Role), default: Role.AGENT },
     auth: [authSchema],
   },
   {

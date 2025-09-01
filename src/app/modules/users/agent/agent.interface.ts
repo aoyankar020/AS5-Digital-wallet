@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
-import { AUTH, EISACTIVE, ROLE } from "../user/user.interface";
+import { AUTH, EISACTIVE } from "../user/user.interface";
+import { ROLE } from "../../../constant/role";
 export interface ApproveAgentOptions {
   phone: string;
   approveStatus?: boolean;

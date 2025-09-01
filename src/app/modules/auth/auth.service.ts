@@ -22,8 +22,13 @@ const user_login_service = async (payload: Partial<IUSER>) => {
   if (!isMatched) {
     throw new AppError(StatusCodes.BAD_GATEWAY, "Passnot matched");
   }
-  const { ...userWithoutPassword } = user.toObject();
+  const {
+    password,
+
+    ...userWithoutPassword
+  } = user.toObject();
   const jwtPayload = { ...userWithoutPassword };
+
   const tokens = await createUserTokens(jwtPayload);
 
   if (!tokens.token) {
@@ -62,7 +67,7 @@ const agent_login_service = async (payload: Partial<IAGENT>) => {
   if (!isMatched) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Password Not Matched");
   }
-  const { ...userWithoutPassword } = user.toObject();
+  const { password, ...userWithoutPassword } = user.toObject();
   const jwtPayload = { ...userWithoutPassword };
 
   const tokens = await createAgentTokens(jwtPayload);

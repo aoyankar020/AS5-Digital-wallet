@@ -18,7 +18,7 @@ export const GlobalError = (
   res.send({
     statuscode: statuscode,
     status: false,
-    message: `${message} ${err?.message}`,
+    message,
     Error: err,
     stack: ENV.NODE_ENV === "development" ? err.stack : null,
   });
