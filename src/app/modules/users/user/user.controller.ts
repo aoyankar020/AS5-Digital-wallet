@@ -245,6 +245,19 @@ const saveUserProfile = asyncHandller(
     });
   }
 );
+const getOverview = asyncHandller(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async (req: Request, res: Response) => {
+    const overview = await services.getOverviewStats();
+    sendResponse(res, {
+      statusCode: overview.statusCode,
+      status: overview.status,
+      message: overview.message,
+      data: overview.data,
+    });
+  }
+);
+
 export const controller = {
   createUser,
   getUsers,
@@ -260,4 +273,5 @@ export const controller = {
   getUserNewAccessToken,
   getMe,
   saveUserProfile,
+  getOverview,
 };

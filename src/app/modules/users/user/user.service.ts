@@ -640,8 +640,36 @@ const updateProfile = async (userID: string, payload: Partial<IUSER>) => {
     data: isUpdate,
   };
 };
+const getOverviewStats = async () => {
+  const totalUsers = await User.countDocuments();
+  const totalAgents = await Agent.countDocuments();
+  const transactionCount = await Transaction.countDocuments();
+
+  const transactionVolume = await Transaction.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalVolume: { $sum: "$amount" },
+      },
+    },
+  ]);
+  const overviewData = {
+    totalUsers,
+    totalAgents,
+    transactionCount,
+    transactionVolume: transactionVolume[0]?.totalVolume || 0,
+  };
+
+  return {
+    statusCode: StatusCodes.OK,
+    status: true,
+    message: `Overview Fetched Successfully`,
+    data: overviewData,
+  };
+};
 
 export const services = {
+  getOverviewStats,
   createUser_service,
   addMoney_service,
   withrow_service,

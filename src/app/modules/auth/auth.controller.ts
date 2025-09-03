@@ -10,6 +10,7 @@ const userLogin = asyncHandller(
     const credentials = req.body;
 
     const islogin = await authServices.user_login_service(credentials);
+    console.log("Login Controller :", islogin);
 
     res.cookie("refreshToken", islogin.data.RefreshToken, {
       httpOnly: true,

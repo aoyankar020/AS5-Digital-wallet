@@ -44,3 +44,9 @@ adminRouter.patch(
   checkAuthandAuthorization(Role.ADMIN),
   controller.blockWallet
 );
+adminRouter.get(
+  "/overview",
+
+  checkAuthandAuthorization(Role.ADMIN),
+  controller.getOverview
+);

@@ -15,7 +15,7 @@ export const GlobalError = (
     statuscode = err.code;
     message = err.message;
   }
-  res.send({
+  res.status(statuscode).json({
     statuscode: statuscode,
     status: false,
     message,

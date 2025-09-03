@@ -20,7 +20,7 @@ const user_login_service = async (payload: Partial<IUSER>) => {
   const isMatched = await matched(payload.password as string, user);
 
   if (!isMatched) {
-    throw new AppError(StatusCodes.BAD_GATEWAY, "Passnot matched");
+    throw new AppError(StatusCodes.BAD_GATEWAY, "Passwort is not matched");
   }
   const {
     password,
@@ -59,13 +59,13 @@ const agent_login_service = async (payload: Partial<IAGENT>) => {
   const user = await Agent.findOne({ email: payload.email });
 
   if (!user) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "User Not Valid");
+    throw new AppError(StatusCodes.UNAUTHORIZED, "User Not Valid");
   }
   const isMatched = await matched(payload.password as string, user);
   console.log("Password ", isMatched);
   console.log("Password ", payload.password);
   if (!isMatched) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Password Not Matched");
+    throw new AppError(StatusCodes.UNAUTHORIZED, "Password Not Matched");
   }
   const { password, ...userWithoutPassword } = user.toObject();
   const jwtPayload = { ...userWithoutPassword };
@@ -73,13 +73,13 @@ const agent_login_service = async (payload: Partial<IAGENT>) => {
   const tokens = await createAgentTokens(jwtPayload);
   if (!tokens.token) {
     throw new AppError(
-      StatusCodes.BAD_REQUEST,
+      StatusCodes.INTERNAL_SERVER_ERROR,
       "Access Token is not Created Successfully"
     );
   }
   if (!tokens.refreshToken) {
     throw new AppError(
-      StatusCodes.BAD_REQUEST,
+      StatusCodes.INTERNAL_SERVER_ERROR,
       "Refresh Token is not Created Successfully"
     );
   }
