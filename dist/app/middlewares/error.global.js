@@ -12,10 +12,10 @@ next) => {
         statuscode = err.code;
         message = err.message;
     }
-    res.send({
+    res.status(statuscode).json({
         statuscode: statuscode,
         status: false,
-        message: `${message} ${err === null || err === void 0 ? void 0 : err.message}`,
+        message,
         Error: err,
         stack: env_config_1.ENV.NODE_ENV === "development" ? err.stack : null,
     });

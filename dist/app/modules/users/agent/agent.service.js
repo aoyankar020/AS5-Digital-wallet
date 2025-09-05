@@ -22,6 +22,7 @@ const tran_interface_1 = require("../../transaction/tran.interface");
 const wallet_interface_1 = require("../../wallet/wallet.interface");
 const jwt_util_1 = require("../../../utils/jwt.util");
 const env_config_1 = require("../../../config/env.config");
+const QueryBuilder_1 = require("../../../utils/QueryBuilder");
 // Create User and Wallet
 const createAGENT_service = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const session = yield agent_model_1.Agent.startSession();
@@ -110,7 +111,7 @@ const cashIn_service = (payload, receiver, ammount) => __awaiter(void 0, void 0,
         receverWalletInfo.balance = receverWalletInfo.balance + ammount; // ✅ Add the amount correctly
         const transaction = yield tran_model_1.Transaction.create([
             {
-                amount: ammount,
+                ammount: ammount,
                 initiatedBy: agent._id,
                 receiverWallet: receverWalletInfo._id, // user
                 senderWallet: agentwalletInfo._id, //  agent
@@ -120,7 +121,7 @@ const cashIn_service = (payload, receiver, ammount) => __awaiter(void 0, void 0,
         ], { session });
         // Populate the `initiatedBy` field (adjust fields as necessary)
         const populatedTransaction = yield tran_model_1.Transaction.findById(transaction[0]._id)
-            .select("amount type status initiatedBy")
+            .select("ammount type status initiatedBy")
             .populate("initiatedBy", "name -_id")
             .session(session);
         yield agentwalletInfo.save({ session }); // ✅ Save to persist change
@@ -184,13 +185,13 @@ const cashOut_service = (payload, sender, ammount) => __awaiter(void 0, void 0, 
             throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "Your Transactional Ammount Can't be empty or Negetive Value");
         }
         if (senderWalletInfo.balance < ammount) {
-            throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "Sender Have not Sufficient Money to Cash out");
+            throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "Not  Sufficient Money to Cash out");
         }
         agentwalletInfo.balance = agentwalletInfo.balance + ammount; // ✅ Add the amount correctly
         senderWalletInfo.balance = senderWalletInfo.balance - ammount; // ✅ Add the amount correctly
         const transaction = yield tran_model_1.Transaction.create([
             {
-                amount: ammount,
+                ammount: ammount,
                 initiatedBy: agent._id,
                 receiverWallet: agentwalletInfo._id, // user
                 senderWallet: senderWalletInfo._id, //  agent
@@ -201,7 +202,7 @@ const cashOut_service = (payload, sender, ammount) => __awaiter(void 0, void 0, 
         // Populate the `initiatedBy` field (adjust fields as necessary)
         const populatedTransaction = yield tran_model_1.Transaction.findById(transaction[0]._id)
             .session(session)
-            .select("amount type status initiatedBy")
+            .select("ammount type status initiatedBy")
             .populate("initiatedBy", "name -_id");
         yield agentwalletInfo.save({ session }); // ✅ Save to persist change
         yield senderWalletInfo.save({ session }); // ✅ Save to persist change
@@ -259,7 +260,7 @@ const getPersonalWallet = (walletID) => __awaiter(void 0, void 0, void 0, functi
     };
 });
 // Get Agent Personal Transaction
-const getTranasaction_service = (email) => __awaiter(void 0, void 0, void 0, function* () {
+const getTranasaction_service = (email, query) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield agent_model_1.Agent.findOne({ email });
     if (!user) {
         return {
@@ -269,38 +270,93 @@ const getTranasaction_service = (email) => __awaiter(void 0, void 0, void 0, fun
             data: null,
         };
     }
-    const transactions = yield tran_model_1.Transaction.find({ initiatedBy: user._id });
+    const filter = { initiatedBy: user._id };
+    if (query.type) {
+        filter.type = query.type;
+    }
+    const baseQuery = tran_model_1.Transaction.find(filter)
+        .populate("senderWallet")
+        .populate("receiverWallet")
+        .populate("initiatedBy", "name email");
+    // const transactions = await Transaction.find({ initiatedBy: user._id });
+    const modelQuery = new QueryBuilder_1.QueryBuilder(baseQuery, query);
+    // count for pagination
+    const agentAllTransactions = yield modelQuery
+        .filter()
+        .sort()
+        .paginate()
+        .build();
+    const total = yield tran_model_1.Transaction.countDocuments({
+        initiatedBy: user._id,
+    });
     return {
         statusCode: http_status_codes_1.StatusCodes.OK,
         status: true,
         message: `Your Transaction History`,
-        data: transactions,
+        data: agentAllTransactions,
+        meta: {
+            total,
+            page: Number(query.page) || 1,
+            limit: Number(query.limit) || 10,
+        },
     };
 });
 const getNewAgentAccessToken = (token) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const isVarifiedToken = (0, jwt_util_1.verifyToken)(token, env_config_1.ENV.JWT_REFRESH_SECRET);
-        const user = yield agent_model_1.Agent.find({
-            email: isVarifiedToken === null || isVarifiedToken === void 0 ? void 0 : isVarifiedToken.email,
-        });
-        if (!user) {
-            throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "No Valid User");
-        }
-        if (!isVarifiedToken) {
-            throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "No Varid Refresh token");
-        }
-        const newToken = (0, jwt_util_1.generateToken)({ user }, env_config_1.ENV.JWT_SECRET, env_config_1.ENV.JWT_EXPIRE);
-        // Populate the `initiatedBy` field (adjust fields as necessary)
+    const isVarifiedToken = (0, jwt_util_1.verifyToken)(token, env_config_1.ENV.JWT_REFRESH_SECRET);
+    const user = yield agent_model_1.Agent.find({
+        email: isVarifiedToken === null || isVarifiedToken === void 0 ? void 0 : isVarifiedToken.email,
+    });
+    if (!user) {
+        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "No Valid User");
+    }
+    if (!isVarifiedToken) {
+        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "No Varid Refresh token");
+    }
+    const newToken = (0, jwt_util_1.generateToken)({ user }, env_config_1.ENV.JWT_SECRET, env_config_1.ENV.JWT_EXPIRE);
+    // Populate the `initiatedBy` field (adjust fields as necessary)
+    return {
+        statusCode: http_status_codes_1.StatusCodes.CREATED,
+        status: true,
+        message: "New Token Created",
+        data: { newToken },
+    };
+});
+// Get Profile
+const getMe = (userID) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield agent_model_1.Agent.findById(userID);
+    if (!user) {
         return {
-            statusCode: http_status_codes_1.StatusCodes.CREATED,
-            status: true,
-            message: "New Token Created",
-            data: { newToken },
+            statusCode: http_status_codes_1.StatusCodes.BAD_REQUEST,
+            status: false,
+            message: `No User Found`,
+            data: null,
         };
     }
-    catch (error) {
-        throw error;
+    return {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        status: true,
+        message: `User Fetched Successfully`,
+        data: user,
+    };
+});
+const updateProfile = (userID, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const isUpdate = yield agent_model_1.Agent.findByIdAndUpdate(userID, payload, {
+        new: true,
+    });
+    if (!isUpdate) {
+        return {
+            statusCode: http_status_codes_1.StatusCodes.BAD_REQUEST,
+            status: false,
+            message: `User Not Updated`,
+            data: null,
+        };
     }
+    return {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        status: true,
+        message: `Profile Updated Successfully`,
+        data: isUpdate,
+    };
 });
 exports.agent_services = {
     getPersonalWallet,
@@ -310,4 +366,6 @@ exports.agent_services = {
     getUser_service,
     getTranasaction_service,
     getNewAgentAccessToken,
+    getMe,
+    updateProfile,
 };

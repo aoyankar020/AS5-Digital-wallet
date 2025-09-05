@@ -30,9 +30,15 @@ const userSchema = new mongoose_1.Schema({
     address: { type: String },
     image: { type: String },
     wallet: { type: mongoose_1.Schema.Types.ObjectId, ref: "Wallet" },
-    isActive: { type: Object.values(user_interface_1.EISACTIVE), default: user_interface_1.EISACTIVE.ACTIVE },
+    isActive: {
+        type: String,
+        enum: Object.values(user_interface_1.EISACTIVE),
+        default: user_interface_1.EISACTIVE.ACTIVE,
+    },
+    // isActive: { type: Object.values(EISACTIVE), default: EISACTIVE.ACTIVE },
     isVarified: { type: Boolean, default: false },
-    role: { type: String, enum: Object.values(user_interface_1.ROLE), default: user_interface_1.ROLE.USER },
+    isApproved: { type: Boolean, default: false },
+    role: { type: String, enum: Object.values(user_interface_1.Role), default: user_interface_1.Role.USER },
     auth: [authSchema],
 }, {
     timestamps: true,

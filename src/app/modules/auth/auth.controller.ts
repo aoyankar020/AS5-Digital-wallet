@@ -14,13 +14,13 @@ const userLogin = asyncHandller(
 
     res.cookie("refreshToken", islogin.data.RefreshToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
     });
     res.cookie("accessToken", islogin.data.accessToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
     });
     sendResponse(res, {
       statusCode: islogin.statusCode,

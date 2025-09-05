@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { AUTH, EISACTIVE, IUSER } from "./user.interface";
+import { AUTH, EISACTIVE, IUSER, TransactionFilter } from "./user.interface";
 import { User } from "./user.model";
 
 import { walletService } from "../../wallet/wallet.service";
@@ -16,13 +16,9 @@ import { Agent } from "../agent/agent.model";
 import { ApproveAgentOptions } from "../agent/agent.interface";
 import { blockWalletOptions, WSTATUS } from "../../wallet/wallet.interface";
 
-import {
-  excludeField,
-  searchParams,
-  transacrionsSearchFields,
-} from "./search.constant";
+import { searchParams } from "./search.constant";
 import { excludeItems } from "../../../global.constant";
-import { Query, Types } from "mongoose";
+import { Types } from "mongoose";
 import { generateToken, verifyToken } from "../../../utils/jwt.util";
 import { ENV } from "../../../config/env.config";
 
@@ -167,36 +163,32 @@ const addMoney_service = async (payload: Partial<IUSER>, ammount: number) => {
   }
 };
 const getNewAccessToken = async (token: string) => {
-  try {
-    const isVarifiedToken = verifyToken(
-      token,
-      ENV.JWT_REFRESH_SECRET
-    ) as JwtPayload;
+  const isVarifiedToken = verifyToken(
+    token,
+    ENV.JWT_REFRESH_SECRET
+  ) as JwtPayload;
 
-    const user = await User.find({
-      email: isVarifiedToken?.email,
-    });
+  const user = await User.find({
+    email: isVarifiedToken?.email,
+  });
 
-    if (!user) {
-      throw new AppError(StatusCodes.BAD_REQUEST, "No Valid User");
-    }
-
-    if (!isVarifiedToken) {
-      throw new AppError(StatusCodes.BAD_REQUEST, "No Varid Refresh token");
-    }
-
-    const newToken = generateToken({ user }, ENV.JWT_SECRET, ENV.JWT_EXPIRE);
-    // Populate the `initiatedBy` field (adjust fields as necessary)
-
-    return {
-      statusCode: StatusCodes.CREATED,
-      status: true,
-      message: "New Token Created",
-      data: { newToken },
-    };
-  } catch (error) {
-    throw error;
+  if (!user) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "No Valid User");
   }
+
+  if (!isVarifiedToken) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "No Varid Refresh token");
+  }
+
+  const newToken = generateToken({ user }, ENV.JWT_SECRET, ENV.JWT_EXPIRE);
+  // Populate the `initiatedBy` field (adjust fields as necessary)
+
+  return {
+    statusCode: StatusCodes.CREATED,
+    status: true,
+    message: "New Token Created",
+    data: { newToken },
+  };
 };
 // Withdraw Money
 const withrow_service = async (
@@ -398,7 +390,7 @@ const getTranasaction_service = async (
       data: null,
     };
   }
-  const filter: any = { initiatedBy: user._id };
+  const filter: TransactionFilter = { initiatedBy: user._id };
   if (query.type) {
     filter.type = query.type;
   }
@@ -533,7 +525,7 @@ const getWallets_service = async () => {
 const getALLUsersTranasaction_service = async (
   query: Record<string, string>
 ) => {
-  const filter: any = {};
+  const filter: TransactionFilter = {};
   if (query.type) {
     filter.type = query.type;
   }

@@ -25,6 +25,7 @@ const search_constant_1 = require("./search.constant");
 const global_constant_1 = require("../../../global.constant");
 const jwt_util_1 = require("../../../utils/jwt.util");
 const env_config_1 = require("../../../config/env.config");
+const QueryBuilder_1 = require("../../../utils/QueryBuilder");
 // Create User and Wallet
 const createUser_service = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     // Start Session on User Module
@@ -102,7 +103,7 @@ const addMoney_service = (payload, ammount) => __awaiter(void 0, void 0, void 0,
         walletInfo.balance = walletInfo.balance + ammount; // ✅ Add the amount correctly
         const transaction = yield tran_model_1.Transaction.create([
             {
-                amount: ammount,
+                ammount: ammount,
                 initiatedBy: user._id,
                 receiverWallet: walletInfo._id,
                 senderWallet: walletInfo._id,
@@ -113,7 +114,7 @@ const addMoney_service = (payload, ammount) => __awaiter(void 0, void 0, void 0,
         // Populate the `initiatedBy` field (adjust fields as necessary)
         const populatedTransaction = yield tran_model_1.Transaction.findById(transaction[0]._id)
             .session(session)
-            .select("amount type status initiatedBy")
+            .select("ammount type status initiatedBy")
             .populate("initiatedBy", "name -_id");
         yield walletInfo.save({ session });
         yield session.commitTransaction();
@@ -134,29 +135,24 @@ const addMoney_service = (payload, ammount) => __awaiter(void 0, void 0, void 0,
     }
 });
 const getNewAccessToken = (token) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const isVarifiedToken = (0, jwt_util_1.verifyToken)(token, env_config_1.ENV.JWT_REFRESH_SECRET);
-        const user = yield user_model_1.User.find({
-            email: isVarifiedToken === null || isVarifiedToken === void 0 ? void 0 : isVarifiedToken.email,
-        });
-        if (!user) {
-            throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "No Valid User");
-        }
-        if (!isVarifiedToken) {
-            throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "No Varid Refresh token");
-        }
-        const newToken = (0, jwt_util_1.generateToken)({ user }, env_config_1.ENV.JWT_SECRET, env_config_1.ENV.JWT_EXPIRE);
-        // Populate the `initiatedBy` field (adjust fields as necessary)
-        return {
-            statusCode: http_status_codes_1.StatusCodes.CREATED,
-            status: true,
-            message: "New Token Created",
-            data: { newToken },
-        };
+    const isVarifiedToken = (0, jwt_util_1.verifyToken)(token, env_config_1.ENV.JWT_REFRESH_SECRET);
+    const user = yield user_model_1.User.find({
+        email: isVarifiedToken === null || isVarifiedToken === void 0 ? void 0 : isVarifiedToken.email,
+    });
+    if (!user) {
+        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "No Valid User");
     }
-    catch (error) {
-        throw error;
+    if (!isVarifiedToken) {
+        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "No Varid Refresh token");
     }
+    const newToken = (0, jwt_util_1.generateToken)({ user }, env_config_1.ENV.JWT_SECRET, env_config_1.ENV.JWT_EXPIRE);
+    // Populate the `initiatedBy` field (adjust fields as necessary)
+    return {
+        statusCode: http_status_codes_1.StatusCodes.CREATED,
+        status: true,
+        message: "New Token Created",
+        data: { newToken },
+    };
 });
 // Withdraw Money
 const withrow_service = (payload, withdraw_ammount) => __awaiter(void 0, void 0, void 0, function* () {
@@ -184,7 +180,7 @@ const withrow_service = (payload, withdraw_ammount) => __awaiter(void 0, void 0,
         walletInfo.balance = walletInfo.balance - withdraw_ammount; // ✅ withdraw_ammount the amount correctly
         const transaction = yield tran_model_1.Transaction.create([
             {
-                amount: withdraw_ammount,
+                ammount: withdraw_ammount,
                 initiatedBy: user._id,
                 receiverWallet: walletInfo._id,
                 senderWallet: walletInfo._id,
@@ -195,7 +191,7 @@ const withrow_service = (payload, withdraw_ammount) => __awaiter(void 0, void 0,
         // Populate the `initiatedBy` field (adjust fields as necessary)
         const populatedTransaction = yield tran_model_1.Transaction.findById(transaction[0]._id)
             .session(session)
-            .select("amount type status initiatedBy")
+            .select("ammount type status initiatedBy")
             .populate("initiatedBy", "name -_id");
         yield walletInfo.save({ session }); // ✅ Save to persist change
         yield session.commitTransaction();
@@ -238,7 +234,7 @@ const sendMoney_service = (payload, transfer_ammount, receiver_phone) => __await
             throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "You have not  sufficient fund  to transfer");
         }
         if (receiver_phone === senderPhone) {
-            throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "Sender Phone Number Can't be same as Receiver Phone Number");
+            throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "Both number can't be same");
         }
         const receiverWallet = yield (0, user_availableCheck_1.isValidUser)(receiver_phone, session); // userwallet
         if (!receiverWallet) {
@@ -256,7 +252,7 @@ const sendMoney_service = (payload, transfer_ammount, receiver_phone) => __await
         yield receiverWallet.save({ session }); // ✅ Save to persist change
         const transaction = yield tran_model_1.Transaction.create([
             {
-                amount: transfer_ammount,
+                ammount: transfer_ammount,
                 initiatedBy: user._id,
                 receiverWallet: receiverWallet._id,
                 senderWallet: senderWallet._id,
@@ -267,7 +263,7 @@ const sendMoney_service = (payload, transfer_ammount, receiver_phone) => __await
         // Populate the `initiatedBy` field (adjust fields as necessary)
         const populatedTransaction = yield tran_model_1.Transaction.findById(transaction[0]._id)
             .session(session)
-            .select("amount type status initiatedBy")
+            .select("ammount type status initiatedBy")
             .populate("initiatedBy", "name -_id");
         yield session.commitTransaction();
         session.endSession();
@@ -287,22 +283,44 @@ const sendMoney_service = (payload, transfer_ammount, receiver_phone) => __await
     }
 });
 // Get Single user Transactions
-const getTranasaction_service = (email) => __awaiter(void 0, void 0, void 0, function* () {
+const getTranasaction_service = (email, query) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield user_model_1.User.findOne({ email });
     if (!user) {
         return {
             statusCode: http_status_codes_1.StatusCodes.BAD_REQUEST,
             status: false,
-            message: `No Users Found`,
+            message: `No User Found`,
             data: null,
         };
     }
-    const transactions = yield tran_model_1.Transaction.find({ initiatedBy: user._id });
+    const filter = { initiatedBy: user._id };
+    if (query.type) {
+        filter.type = query.type;
+    }
+    const baseQuery = tran_model_1.Transaction.find(filter)
+        .populate("senderWallet")
+        .populate("receiverWallet")
+        .populate("initiatedBy", "name email");
+    const modelQuery = new QueryBuilder_1.QueryBuilder(baseQuery, query);
+    const userAllTransactions = yield modelQuery
+        .filter()
+        .sort()
+        .paginate()
+        .build();
+    const total = yield tran_model_1.Transaction.countDocuments({
+        initiatedBy: user._id,
+    });
+    // const transactions = await Transaction.find({ initiatedBy: user._id });
     return {
         statusCode: http_status_codes_1.StatusCodes.OK,
         status: true,
         message: `ALL Transaction History`,
-        data: transactions,
+        data: userAllTransactions,
+        meta: {
+            total,
+            page: Number(query.page) || 1,
+            limit: Number(query.limit) || 10,
+        },
     };
 });
 // Gell User Personal Wallet
@@ -364,6 +382,24 @@ const getUser_service = (query) => __awaiter(void 0, void 0, void 0, function* (
         data: users,
     };
 });
+// Get Profile
+const getMe = (userID) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield user_model_1.User.findById(userID);
+    if (!user) {
+        return {
+            statusCode: http_status_codes_1.StatusCodes.BAD_REQUEST,
+            status: false,
+            message: `No User Found`,
+            data: null,
+        };
+    }
+    return {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        status: true,
+        message: `User Fetched Successfully`,
+        data: user,
+    };
+});
 //  Get All Users Wallet
 const getWallets_service = () => __awaiter(void 0, void 0, void 0, function* () {
     const wallets = yield wallet_model_1.Wallet.find({});
@@ -383,13 +419,32 @@ const getWallets_service = () => __awaiter(void 0, void 0, void 0, function* () 
     };
 });
 // Get All Users Transaction
-const getALLUsersTranasaction_service = () => __awaiter(void 0, void 0, void 0, function* () {
-    const transactions = yield tran_model_1.Transaction.find({});
+const getALLUsersTranasaction_service = (query) => __awaiter(void 0, void 0, void 0, function* () {
+    const filter = {};
+    if (query.type) {
+        filter.type = query.type;
+    }
+    const baseQuery = tran_model_1.Transaction.find(filter)
+        .populate("senderWallet")
+        .populate("receiverWallet")
+        .populate("initiatedBy", "name email");
+    const modelQuery = new QueryBuilder_1.QueryBuilder(baseQuery, query);
+    const allUsersTransactions = yield modelQuery
+        .filter()
+        .sort()
+        .paginate()
+        .build();
+    const total = yield tran_model_1.Transaction.countDocuments();
     return {
         statusCode: http_status_codes_1.StatusCodes.OK,
         status: true,
         message: `ALL Users Transaction History`,
-        data: transactions,
+        data: allUsersTransactions,
+        meta: {
+            total,
+            page: Number(query.page) || 1,
+            limit: Number(query.limit) || 10,
+        },
     };
 });
 // Approve Agent
@@ -398,20 +453,22 @@ const approve_Agent = (_a) => __awaiter(void 0, [_a], void 0, function* ({ phone
     if (!agent) {
         throw new Error("Agent not found");
     }
+    // Always update active status
+    agent.isActive = activeStatus;
     if (activeStatus !== user_interface_1.EISACTIVE.BLOCKED) {
-        if (!(agent === null || agent === void 0 ? void 0 : agent.isApproved) && approveStatus !== undefined) {
+        // Update approval if provided
+        if (approveStatus !== undefined) {
             agent.isApproved = approveStatus;
-            yield agent.save();
         }
-        if (!(agent === null || agent === void 0 ? void 0 : agent.isVarified) && varifiedStatus !== undefined) {
+        // Update verification if provided
+        if (varifiedStatus !== undefined) {
             agent.isVarified = varifiedStatus;
-            yield agent.save();
         }
     }
     else {
+        // Blocked state overrides everything
         agent.isApproved = false;
         agent.isVarified = false;
-        agent.isActive = activeStatus;
     }
     yield agent.save();
     return {
@@ -437,7 +494,53 @@ const block_Wallet = (_a) => __awaiter(void 0, [_a], void 0, function* ({ wallet
         data: walet,
     };
 });
+const updateProfile = (userID, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const isUpdate = yield user_model_1.User.findByIdAndUpdate(userID, payload, {
+        new: true,
+    });
+    if (!isUpdate) {
+        return {
+            statusCode: http_status_codes_1.StatusCodes.BAD_REQUEST,
+            status: false,
+            message: `User Not Updated`,
+            data: null,
+        };
+    }
+    return {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        status: true,
+        message: `Profile Updated Successfully`,
+        data: isUpdate,
+    };
+});
+const getOverviewStats = () => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const totalUsers = yield user_model_1.User.countDocuments();
+    const totalAgents = yield agent_model_1.Agent.countDocuments();
+    const transactionCount = yield tran_model_1.Transaction.countDocuments();
+    const transactionVolume = yield tran_model_1.Transaction.aggregate([
+        {
+            $group: {
+                _id: null,
+                totalVolume: { $sum: "$amount" },
+            },
+        },
+    ]);
+    const overviewData = {
+        totalUsers,
+        totalAgents,
+        transactionCount,
+        transactionVolume: ((_a = transactionVolume[0]) === null || _a === void 0 ? void 0 : _a.totalVolume) || 0,
+    };
+    return {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        status: true,
+        message: `Overview Fetched Successfully`,
+        data: overviewData,
+    };
+});
 exports.services = {
+    getOverviewStats,
     createUser_service,
     addMoney_service,
     withrow_service,
@@ -450,4 +553,6 @@ exports.services = {
     block_Wallet,
     getPersonalWallet,
     getNewAccessToken,
+    getMe,
+    updateProfile,
 };

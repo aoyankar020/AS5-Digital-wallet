@@ -6,6 +6,12 @@ export enum Role {
   USER = "USER",
   AGENT = "AGENT",
 }
+export interface TransactionFilter {
+  type?: string;
+  senderWallet?: string;
+  receiverWallet?: string;
+  initiatedBy?: Types.ObjectId;
+}
 export enum EISACTIVE {
   ACTIVE = "ACTIVE",
   INACTIVE = "INACTIVE",

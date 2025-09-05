@@ -34,7 +34,7 @@ const user_login_service = (payload) => __awaiter(void 0, void 0, void 0, functi
     }
     const isMatched = yield (0, isValidPass_util_1.matched)(payload.password, user);
     if (!isMatched) {
-        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_GATEWAY, "Passnot matched");
+        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_GATEWAY, "Passwort is not matched");
     }
     const userWithoutPassword = __rest(user.toObject(), []);
     const jwtPayload = Object.assign({}, userWithoutPassword);
@@ -59,22 +59,23 @@ const user_login_service = (payload) => __awaiter(void 0, void 0, void 0, functi
 const agent_login_service = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield agent_model_1.Agent.findOne({ email: payload.email });
     if (!user) {
-        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "User Not Valid");
+        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.UNAUTHORIZED, "User Not Valid");
     }
     const isMatched = yield (0, isValidPass_util_1.matched)(payload.password, user);
     console.log("Password ", isMatched);
     console.log("Password ", payload.password);
     if (!isMatched) {
-        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "Password Not Matched");
+        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.UNAUTHORIZED, "Password Not Matched");
     }
-    const userWithoutPassword = __rest(user.toObject(), []);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _a = user.toObject(), { password } = _a, userWithoutPassword = __rest(_a, ["password"]);
     const jwtPayload = Object.assign({}, userWithoutPassword);
     const tokens = yield (0, userToken_1.createAgentTokens)(jwtPayload);
     if (!tokens.token) {
-        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "Access Token is not Created Successfully");
+        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Access Token is not Created Successfully");
     }
     if (!tokens.refreshToken) {
-        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "Refresh Token is not Created Successfully");
+        throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.INTERNAL_SERVER_ERROR, "Refresh Token is not Created Successfully");
     }
     return {
         statusCode: http_status_codes_1.StatusCodes.OK,

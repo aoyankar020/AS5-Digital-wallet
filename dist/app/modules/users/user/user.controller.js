@@ -39,6 +39,7 @@ const addMoney = (0, async_handler_1.asyncHandller)(
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const data = req.user;
+    console.log("User:", data);
     if (!data) {
         (0, sendResponse_1.sendResponse)(res, {
             statusCode: http_status_codes_1.StatusCodes.NON_AUTHORITATIVE_INFORMATION,
@@ -48,6 +49,7 @@ const addMoney = (0, async_handler_1.asyncHandller)(
         });
     }
     const { ammount } = req.body;
+    console.log("Ammount", ammount);
     const payload = {
         phone: data.phone,
     };
@@ -99,12 +101,14 @@ const getTransactions = (0, async_handler_1.asyncHandller)(
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const user = req.user;
-    const isCreated = yield user_service_1.services.getTranasaction_service(user.email);
+    const query = req.query || {};
+    const isCreated = yield user_service_1.services.getTranasaction_service(user.email, query);
     (0, sendResponse_1.sendResponse)(res, {
         statusCode: isCreated.statusCode,
         status: isCreated.status,
         message: isCreated.message,
         data: isCreated.data,
+        meta: isCreated.meta,
     });
 }));
 const getPersonalWallet = (0, async_handler_1.asyncHandller)(
@@ -133,12 +137,14 @@ const getUserNewAccessToken = (0, async_handler_1.asyncHandller)((req, res) => _
 const getAllUsersTransactions = (0, async_handler_1.asyncHandller)(
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const isCreated = yield user_service_1.services.getALLUsersTranasaction_service();
+    const query = req.query || {};
+    const isCreated = yield user_service_1.services.getALLUsersTranasaction_service(query);
     (0, sendResponse_1.sendResponse)(res, {
         statusCode: isCreated.statusCode,
         status: isCreated.status,
         message: isCreated.message,
         data: isCreated.data,
+        meta: isCreated.meta,
     });
 }));
 const getUsers = (0, async_handler_1.asyncHandller)(
@@ -146,6 +152,19 @@ const getUsers = (0, async_handler_1.asyncHandller)(
 (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const query = req.query || {};
     const isCreated = yield user_service_1.services.getUser_service(query);
+    (0, sendResponse_1.sendResponse)(res, {
+        statusCode: isCreated.statusCode,
+        status: isCreated.status,
+        message: isCreated.message,
+        data: isCreated.data,
+    });
+}));
+const getMe = (0, async_handler_1.asyncHandller)(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+(req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const decodedToken = req.user;
+    console.log("decoded token", decodedToken._id);
+    const isCreated = yield user_service_1.services.getMe(decodedToken._id);
     (0, sendResponse_1.sendResponse)(res, {
         statusCode: isCreated.statusCode,
         status: isCreated.status,
@@ -187,6 +206,32 @@ const blockWallet = (0, async_handler_1.asyncHandller)((req, res) => __awaiter(v
         data: isCreated.data,
     });
 }));
+const saveUserProfile = (0, async_handler_1.asyncHandller)(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+(req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const decodedToken = req.user;
+    console.log("Save Data Called");
+    // Get update payload from request body
+    const payload = req.body;
+    const isCreated = yield user_service_1.services.updateProfile(decodedToken._id, payload);
+    (0, sendResponse_1.sendResponse)(res, {
+        statusCode: isCreated.statusCode,
+        status: isCreated.status,
+        message: isCreated.message,
+        data: isCreated.data,
+    });
+}));
+const getOverview = (0, async_handler_1.asyncHandller)(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+(req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const overview = yield user_service_1.services.getOverviewStats();
+    (0, sendResponse_1.sendResponse)(res, {
+        statusCode: overview.statusCode,
+        status: overview.status,
+        message: overview.message,
+        data: overview.data,
+    });
+}));
 exports.controller = {
     createUser,
     getUsers,
@@ -200,4 +245,7 @@ exports.controller = {
     blockWallet,
     getPersonalWallet,
     getUserNewAccessToken,
+    getMe,
+    saveUserProfile,
+    getOverview,
 };

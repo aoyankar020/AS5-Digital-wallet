@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EISACTIVE = exports.ROLE = void 0;
-var ROLE;
-(function (ROLE) {
-    ROLE["ADMIN"] = "ADMIN";
-    ROLE["USER"] = "USER";
-    ROLE["AGENT"] = "AGENT";
-})(ROLE || (exports.ROLE = ROLE = {}));
+exports.EISACTIVE = exports.Role = void 0;
+var Role;
+(function (Role) {
+    Role["SUPER_ADMIN"] = "SUPER_ADMIN";
+    Role["ADMIN"] = "ADMIN";
+    Role["USER"] = "USER";
+    Role["AGENT"] = "AGENT";
+})(Role || (exports.Role = Role = {}));
 var EISACTIVE;
 (function (EISACTIVE) {
     EISACTIVE["ACTIVE"] = "ACTIVE";

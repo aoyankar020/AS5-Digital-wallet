@@ -37,7 +37,7 @@ const agentSchema = new mongoose_1.Schema({
     },
     isVarified: { type: Boolean, default: false },
     isApproved: { type: Boolean, default: false },
-    role: { type: String, enum: Object.values(user_interface_1.ROLE), default: user_interface_1.ROLE.AGENT },
+    role: { type: String, enum: Object.values(user_interface_1.Role), default: user_interface_1.Role.AGENT },
     auth: [authSchema],
 }, {
     timestamps: true,

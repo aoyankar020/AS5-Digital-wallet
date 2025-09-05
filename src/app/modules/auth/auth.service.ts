@@ -2,9 +2,6 @@ import { User } from "../users/user/user.model";
 import { StatusCodes } from "http-status-codes";
 import { matched } from "../../utils/isValidPass.util";
 
-import { ENV } from "../../config/env.config";
-import { JWT } from "../../utils/jwt.util";
-
 import { IUSER } from "../users/user/user.interface";
 import { IAGENT } from "../users/agent/agent.interface";
 import { Agent } from "../users/agent/agent.model";
@@ -22,11 +19,7 @@ const user_login_service = async (payload: Partial<IUSER>) => {
   if (!isMatched) {
     throw new AppError(StatusCodes.BAD_GATEWAY, "Passwort is not matched");
   }
-  const {
-    password,
-
-    ...userWithoutPassword
-  } = user.toObject();
+  const { ...userWithoutPassword } = user.toObject();
   const jwtPayload = { ...userWithoutPassword };
 
   const tokens = await createUserTokens(jwtPayload);
@@ -67,6 +60,7 @@ const agent_login_service = async (payload: Partial<IAGENT>) => {
   if (!isMatched) {
     throw new AppError(StatusCodes.UNAUTHORIZED, "Password Not Matched");
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password, ...userWithoutPassword } = user.toObject();
   const jwtPayload = { ...userWithoutPassword };
 

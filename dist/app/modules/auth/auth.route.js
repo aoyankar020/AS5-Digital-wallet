@@ -4,5 +4,6 @@ exports.authRouter = void 0;
 const express_1 = require("express");
 const auth_controller_1 = require("./auth.controller");
 exports.authRouter = (0, express_1.Router)();
-exports.authRouter.post("/user", auth_controller_1.authController.userLogin);
-exports.authRouter.post("/agent", auth_controller_1.authController.agentLogin);
+exports.authRouter.post("/login/user", auth_controller_1.authController.userLogin);
+exports.authRouter.post("/login/agent", auth_controller_1.authController.agentLogin);
+exports.authRouter.post("/logout", auth_controller_1.authController.logout);

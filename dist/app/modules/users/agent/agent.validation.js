@@ -61,5 +61,5 @@ exports.agentUpdateSchema = z.object({
     isVerified: z
         .boolean({ error: "isVerified must be true or false" })
         .optional(),
-    role: z.enum(Object.values(user_interface_1.ROLE)).optional(),
+    role: z.enum(Object.values(user_interface_1.Role)).optional(),
 });

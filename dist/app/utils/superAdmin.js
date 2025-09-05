@@ -35,8 +35,8 @@ const seedAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
     const newSuperAdmin = yield user_model_1.User.create({
         email: env_config_1.ENV.ADMIN_EMAIL,
         password: env_config_1.ENV.ADMIN_PASSWORD,
-        role: user_interface_1.ROLE.ADMIN,
-        name: "Super Admin",
+        role: user_interface_1.Role.ADMIN,
+        name: "Admin",
         isActive: user_interface_1.EISACTIVE.ACTIVE,
         phone: env_config_1.ENV.ADMIN_PHONE,
         isVerified: true,

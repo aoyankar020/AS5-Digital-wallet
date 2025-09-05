@@ -5,16 +5,30 @@ export class QueryBuilder<T> {
   public modelQuery: Query<T[], T>;
   public readonly query: Record<string, string>;
   constructor(modelQuery: Query<T[], T>, query: Record<string, string>) {
-    (this.modelQuery = modelQuery), (this.query = query);
+    this.modelQuery = modelQuery;
+    this.query = query;
   }
   filter(): this {
-    const filter = { ...this.query };
-    for (const field of excludeField) {
-      delete filter[field];
-    }
+    const filter = Object.entries(this.query).reduce((acc, [key, value]) => {
+      if (!excludeField.includes(key)) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as Record<string, unknown>);
+
     this.modelQuery = this.modelQuery.find(filter);
     return this;
   }
+  // filter(): this {
+  //   const filter: Record<string, unknown> = { ...this.query };
+  //   for (const field of excludeField) {
+  //     if (field in filter) {
+  //       delete filter[field];
+  //     }
+  //   }
+  //   this.modelQuery = this.modelQuery.find(filter);
+  //   return this;
+  // }
   search(searchableFields: string[]): this {
     const searchTerm = this.query.searchTerm || "";
     const searchQuery = {

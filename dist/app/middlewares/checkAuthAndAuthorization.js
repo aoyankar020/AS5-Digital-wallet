@@ -14,15 +14,18 @@ const http_status_codes_1 = require("http-status-codes");
 const error_helper_1 = require("../helper/error.helper");
 const env_config_1 = require("../config/env.config");
 const jwt_util_1 = require("../utils/jwt.util");
+// import { ROLE } from "../constant/role";
 const checkAuthandAuthorization = (...roles) => (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const token = req.headers.authorization;
+        const token = req.headers.authorization || req.cookies.accessToken;
         const isValid = yield jwt_util_1.JWT.verifyToken(token, env_config_1.ENV.JWT_SECRET);
         if (!isValid) {
             throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.BAD_REQUEST, "Token is not Valid");
         }
         const decoded = isValid;
-        if (!roles.includes(decoded.role)) {
+        const userRole = ((decoded === null || decoded === void 0 ? void 0 : decoded.role) || "").trim().toUpperCase();
+        const allowedRoles = roles.map((r) => r.toUpperCase());
+        if (!allowedRoles.includes(userRole)) {
             throw new error_helper_1.AppError(http_status_codes_1.StatusCodes.UNAUTHORIZED, "You are Not Authorized for this route");
         }
         req.user = decoded;

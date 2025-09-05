@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppError = void 0;
 class AppError extends Error {
     constructor(code, message, stack = "") {
-        super();
+        super(message);
         this.message = message;
         this.code = code;
         if (stack) {

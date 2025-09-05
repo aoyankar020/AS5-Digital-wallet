@@ -4,7 +4,7 @@ exports.Transaction = void 0;
 const mongoose_1 = require("mongoose");
 const tran_interface_1 = require("./tran.interface");
 const transactionSchema = new mongoose_1.Schema({
-    amount: { type: Number, required: true },
+    ammount: { type: Number, required: true },
     type: {
         type: String,
         enum: Object.values(tran_interface_1.TRANSACTION_TYPE),

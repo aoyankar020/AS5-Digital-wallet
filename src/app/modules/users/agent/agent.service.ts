@@ -6,7 +6,7 @@ import { Wallet } from "../../wallet/wallet.model";
 
 import { IAGENT } from "./agent.interface";
 import { Agent } from "./agent.model";
-import { AUTH, EISACTIVE } from "../user/user.interface";
+import { AUTH, EISACTIVE, TransactionFilter } from "../user/user.interface";
 import { User } from "../user/user.model";
 import { Transaction } from "../../transaction/tran.model";
 import {
@@ -19,7 +19,7 @@ import { generateToken, verifyToken } from "../../../utils/jwt.util";
 import { ENV } from "../../../config/env.config";
 import { JwtPayload } from "jsonwebtoken";
 import { QueryBuilder } from "../../../utils/QueryBuilder";
-import { transacrionsSearchFields } from "../user/search.constant";
+
 // Create User and Wallet
 const createAGENT_service = async (payload: Partial<IAGENT>) => {
   const session = await Agent.startSession();
@@ -367,7 +367,7 @@ const getTranasaction_service = async (
     };
   }
 
-  const filter: any = { initiatedBy: user._id };
+  const filter: TransactionFilter = { initiatedBy: user._id };
 
   if (query.type) {
     filter.type = query.type;
@@ -402,34 +402,30 @@ const getTranasaction_service = async (
 };
 
 const getNewAgentAccessToken = async (token: string) => {
-  try {
-    const isVarifiedToken = verifyToken(
-      token,
-      ENV.JWT_REFRESH_SECRET
-    ) as JwtPayload;
-    const user = await Agent.find({
-      email: isVarifiedToken?.email,
-    });
-    if (!user) {
-      throw new AppError(StatusCodes.BAD_REQUEST, "No Valid User");
-    }
-
-    if (!isVarifiedToken) {
-      throw new AppError(StatusCodes.BAD_REQUEST, "No Varid Refresh token");
-    }
-
-    const newToken = generateToken({ user }, ENV.JWT_SECRET, ENV.JWT_EXPIRE);
-    // Populate the `initiatedBy` field (adjust fields as necessary)
-
-    return {
-      statusCode: StatusCodes.CREATED,
-      status: true,
-      message: "New Token Created",
-      data: { newToken },
-    };
-  } catch (error) {
-    throw error;
+  const isVarifiedToken = verifyToken(
+    token,
+    ENV.JWT_REFRESH_SECRET
+  ) as JwtPayload;
+  const user = await Agent.find({
+    email: isVarifiedToken?.email,
+  });
+  if (!user) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "No Valid User");
   }
+
+  if (!isVarifiedToken) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "No Varid Refresh token");
+  }
+
+  const newToken = generateToken({ user }, ENV.JWT_SECRET, ENV.JWT_EXPIRE);
+  // Populate the `initiatedBy` field (adjust fields as necessary)
+
+  return {
+    statusCode: StatusCodes.CREATED,
+    status: true,
+    message: "New Token Created",
+    data: { newToken },
+  };
 };
 // Get Profile
 const getMe = async (userID: string) => {
